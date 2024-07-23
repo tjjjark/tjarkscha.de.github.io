@@ -22,6 +22,7 @@
             cursor: pointer;
         }
     </style>
+    <?php include 'counter.php'; ?>
 </head>
 <body>
     <script>
