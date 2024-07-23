@@ -90,9 +90,9 @@
             span.dataset.rotation = 0;
 
             // Random speed and rotation values
-            span.dataset.speedX = (Math.random() * 2 - 1) * 0.1; // Adjusted movement speed
-            span.dataset.speedY = (Math.random() * 2 - 1) * 0.1; // Adjusted movement speed
-            span.dataset.rotationSpeed = (Math.random() * 2 - 1) * 0.02; // Adjusted rotation speed
+            span.dataset.speedX = (Math.random() * 2 - 1) * 0.2; // Adjusted movement speed
+            span.dataset.speedY = (Math.random() * 2 - 1) * 0.2; // Adjusted movement speed
+            span.dataset.rotationSpeed = (Math.random() * 2 - 1) * 0.05; // Adjusted rotation speed
 
             // Add event listener for clicks
             span.addEventListener('click', () => {
@@ -126,7 +126,7 @@
 
                 // Add bounce effect on click
                 const bounceDuration = 5000; // Duration in milliseconds
-                const bounceSpeed = 1.5; // Speed factor
+                const bounceSpeed = 3.5; // Speed factor
 
                 // Store the original position
                 const startLeft = parseFloat(span.style.left);
