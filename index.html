@@ -200,8 +200,8 @@
                 letter.style.transform = `rotate(${currentRotation}deg)`;
 
                 // Update position
-                left += speedX * deltaY * 0.5;
-                top += speedY * deltaY * 0.5;
+                left += speedX * deltaY * 0.02;
+                top += speedY * deltaY * 0.02;
 
                 // Bounce off edges with margins
                 if (left < horizontalMargin) {
