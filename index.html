@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>tjarkscha.de</title>
     <style>
-        /* Version 1.1 */
+        /* Version 1.2 */
         body {
             margin: 0;
             overflow: hidden; /* Prevent scrolling */
@@ -25,7 +25,7 @@
 </head>
 <body>
     <script>
-        // Version 1.1
+        // Version 1.2
         const text = 'tjark j. schade';
         const letters = text.split('');
         const body = document.body;
@@ -77,7 +77,6 @@
                 'rgb(230, 70, 220)',   // Bright Magenta
                 'rgb(255, 115, 70)',   // Warm Orange
                 'rgb(0, 100, 0)',      // Deep Green
-                'rgb(0, 255, 255)',    // Bright Teal
                 'rgb(255, 87, 34)',    // Rich Orange
                 'rgb(128, 0, 128)',    // Vivid Purple
                 'rgb(255, 20, 147)',   // Deep Pink
@@ -97,8 +96,7 @@
             };
         }
 
-        // Create and style letter elements
-        const letterElements = letters.map((letter) => {
+        function createLetterElement(letter) {
             const span = document.createElement('span');
             span.textContent = letter;
             span.className = 'letter';
@@ -121,7 +119,7 @@
             span.dataset.speedY = (Math.random() * 2 - 1) * 0.2;
             span.dataset.rotationSpeed = (Math.random() * 2 - 1) * 0.05;
 
-            // Click event for changing properties
+            // Click event for changing properties and spawning new letter
             span.addEventListener('click', () => {
                 const properties = ['color', 'fontFamily', 'fontWeight', 'fontSize'];
                 let changed = false;
@@ -170,10 +168,21 @@
                     span.style.fontWeight = fontWeight;
                     span.style.fontSize = fontSize;
                 }
+
+                // Spawn new letter
+                const newLetter = createLetterElement(letter);
+                body.appendChild(newLetter);
+                letterElements.push(newLetter);
             });
 
-            body.appendChild(span);
             return span;
+        }
+
+        // Create and style initial letter elements
+        const letterElements = letters.map((letter) => {
+            const letterElement = createLetterElement(letter);
+            body.appendChild(letterElement);
+            return letterElement;
         });
 
         // Function to animate the letters with scrolling
