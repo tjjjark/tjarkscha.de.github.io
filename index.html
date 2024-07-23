@@ -139,8 +139,8 @@
                     if (elapsed < bounceDuration) {
                         const progress = elapsed / bounceDuration;
                         const easing = Math.sin(progress * Math.PI / 2); // Smooth in-out effect
-                        span.style.left = `${startLeft + (Math.random() * 2 - 1) * bounceSpeed * easing}px`;
-                        span.style.top = `${startTop + (Math.random() * 2 - 1) * bounceSpeed * easing}px`;
+                        span.style.left = `${startLeft + (Math.random() * 0.2 - 1) * bounceSpeed * easing}px`;
+                        span.style.top = `${startTop + (Math.random() * 0.2 - 1) * bounceSpeed * easing}px`;
                         requestAnimationFrame(bounce);
                     } else {
                         isBouncing = false;
@@ -221,7 +221,7 @@
                 letter.style.transform = `rotate(${currentRotation}deg)`;
 
                 // Adjust movement
-                const movementSpeed = 0.1; // Reduced movement speed when not scrolling
+                const movementSpeed = 0.5; // Reduced movement speed when not scrolling
                 left += speedX * movementSpeed;
                 top += speedY * movementSpeed;
 
