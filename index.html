@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>tjarkscha.de</title>
     <style>
+        /* Version 1.1 */
         body {
             margin: 0;
             overflow: hidden; /* Prevent scrolling */
@@ -17,148 +18,165 @@
             font-size: 18vw; /* Responsive font size based on viewport width */
             position: absolute;
             color: #333;
-            transition: transform 0.1s, color 0.1s, font-family 0.1s, font-weight 0.1s;
+            transition: transform 0.1s, color 0.1s, font-family 0.1s, font-weight 0.1s, font-size 0.1s;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
     <script>
+        // Version 1.1
         const text = 'tjark j. schade';
         const letters = text.split('');
         const body = document.body;
         const width = window.innerWidth;
         const height = window.innerHeight;
-        const margin = 50; // Margin from edges
+        const horizontalMargin = 12; // Horizontal margin value
+        const verticalMargin = 24;   // Vertical margin value
 
-        // B-Spline curve generation
-        function bSpline(t, points) {
-            const n = points.length - 1;
-            const p = 3; // Degree of the B-Spline
-            const k = Math.floor(t * (n - p + 1));
-            const localT = t * (n - p + 1) - k;
-            const t0 = k / (n - p + 1);
-            const t1 = t0 + 1;
-
-            const basis = (t, k, p) => {
-                if (p === 0) return (k <= t && t < k + 1) ? 1 : 0;
-                const a = (t - k) / p;
-                const b = (k + p + 1 - t) / p;
-                return a * basis(t, k, p - 1) + b * basis(t, k + 1, p - 1);
-            };
-
-            return [
-                basis(localT, k, p) * points[k][0] + basis(localT, k + 1, p) * points[k + 1][0],
-                basis(localT, k, p) * points[k][1] + basis(localT, k + 1, p) * points[k + 1][1]
-            ];
+        // Helper function to get random position with variation
+        function getRandomPosition(baseX, baseY, variation = 50) {
+            return [baseX + Math.random() * variation - variation / 2, baseY + Math.random() * variation - variation / 2];
         }
 
-        function generateBSplinePoints(controlPoints, numPoints) {
-            const points = [];
-            for (let i = 0; i <= 1; i += 1 / (numPoints - 1)) {
-                points.push(bSpline(i, controlPoints));
-            }
-            return points;
-        }
+        // Set initial positions for letters in the row with slight variation
+        let startX = width / 2 - (text.length * 9) * (width / 100) / 2; // Centered starting position
+        const startY = height / 2;
 
-        // Define control points for B-Spline expanded across the screen
-        const controlPoints = [
-            [margin, margin],
-            [width / 6, height / 4],
-            [width / 3, height / 2],
-            [2 * width / 3, 2 * height / 3],
-            [5 * width / 6, height / 4],
-            [width - margin, height - margin]
-        ];
+        // Adjust the positions for "j" and "a" to be within the string's layout
+        const letterPositions = {
+            't': [startX + 0 * (width / 100 * 9), startY],
+            'j': [startX + 1 * (width / 100 * 9), startY], // Position adjusted to be within string layout
+            'a': [startX + 2 * (width / 100 * 9), startY], // Position adjusted to be within string layout
+            'r': [startX + 3 * (width / 100 * 9), startY],
+            'k': [startX + 4 * (width / 100 * 9), startY],
+            ' ': [startX + 5 * (width / 100 * 9), startY],
+            'j': [startX + 6 * (width / 100 * 9), startY], // Position adjusted to be within string layout
+            '.': [startX + 7 * (width / 100 * 9), startY],
+            ' ': [startX + 8 * (width / 100 * 9), startY],
+            's': [startX + 9 * (width / 100 * 9), startY],
+            'c': [startX + 10 * (width / 100 * 9), startY],
+            'h': [startX + 11 * (width / 100 * 9), startY],
+            'a': [startX + 12 * (width / 100 * 9), startY], // Position adjusted to be within string layout
+            'd': [startX + 13 * (width / 100 * 9), startY],
+            'e': [startX + 14 * (width / 100 * 9), startY]
+        };
 
-        const numPoints = 15; // Total number of points along the spline
-        const splinePoints = generateBSplinePoints(controlPoints, numPoints);
-
-        // Initial positions for letters along the spline
         const initialPositions = {};
-        letters.forEach((letter, index) => {
-            initialPositions[letter] = splinePoints[index % numPoints] || [Math.random() * (width - 2 * margin) + margin, Math.random() * (height - 2 * margin) + margin];
+        letters.forEach((letter) => {
+            const [left, top] = letterPositions[letter] ? getRandomPosition(letterPositions[letter][0], letterPositions[letter][1], 20) : getRandomPosition(startX + Math.random() * (width / 100 * 9), startY, 20);
+            initialPositions[letter] = [Math.max(horizontalMargin, Math.min(left, width - horizontalMargin)), Math.max(verticalMargin, Math.min(top, height - verticalMargin))];
         });
 
         // Random properties for letters
         function getRandomProperties() {
             const colors = [
-                'black',
-                'rgb(0, 0, 255)',
-                'rgb(50, 220, 0)',
-                'rgb(230, 70, 220)',
-                'rgb(255, 115, 70)'
+                'black',               // Classic Black
+                'rgb(0, 0, 255)',      // Bright Blue
+                'rgb(50, 220, 0)',     // Vibrant Green
+                'rgb(230, 70, 220)',   // Bright Magenta
+                'rgb(255, 115, 70)',   // Warm Orange
+                'rgb(0, 100, 0)',      // Deep Green
+                'rgb(0, 255, 255)',    // Bright Teal
+                'rgb(255, 87, 34)',    // Rich Orange
+                'rgb(128, 0, 128)',    // Vivid Purple
+                'rgb(255, 20, 147)',   // Deep Pink
+                'rgb(100, 149, 237)',  // Cornflower Blue
+                'rgb(255, 69, 0)',     // Red-Orange
+                'rgb(50, 205, 50)',    // Lime Green
+                'rgb(255, 105, 180)'   // Hot Pink
             ];
-            const fontFamilies = ['sans-serif', 'serif'];
+            const fontFamilies = ['sans-serif', 'serif', 'Wingdings'];
             const fontWeights = ['normal', 'bold'];
 
             return {
                 color: Math.random() < 0.7 ? 'black' : colors[Math.floor(Math.random() * colors.length)],
-                fontFamily: Math.random() < 0.7 ? 'sans-serif' : 'serif',
-                fontWeight: fontWeights[Math.floor(Math.random() * fontWeights.length)]
+                fontFamily: Math.random() < 0.5 ? 'sans-serif' : 'serif', // Initially random but not Wingdings
+                fontWeight: fontWeights[Math.floor(Math.random() * fontWeights.length)],
+                fontSize: `${(Math.random() * 0.40 + 0.80) * 18}vw` // Font size within +/- 20% range of 18vw
             };
         }
 
-        // Store initial positions and states
+        // Create and style letter elements
         const letterElements = letters.map((letter) => {
             const span = document.createElement('span');
             span.textContent = letter;
             span.className = 'letter';
 
             // Apply random styles
-            const { color, fontFamily, fontWeight } = getRandomProperties();
+            const { color, fontFamily, fontWeight, fontSize } = getRandomProperties();
             span.style.color = color;
             span.style.fontFamily = fontFamily;
             span.style.fontWeight = fontWeight;
+            span.style.fontSize = fontSize;
 
-            // Position letters initially along the spline
-            const [initialLeft, initialTop] = initialPositions[letter] || [Math.random() * (width - 2 * margin) + margin, Math.random() * (height - 2 * margin) + margin];
-            span.style.left = `${Math.max(margin, Math.min(initialLeft, width - margin))}px`;
-            span.style.top = `${Math.max(margin, Math.min(initialTop, height - margin))}px`;
+            // Position letters
+            const [initialLeft, initialTop] = initialPositions[letter] || [Math.random() * (width - 2 * horizontalMargin) + horizontalMargin, Math.random() * (height - 2 * verticalMargin) + verticalMargin];
+            span.style.left = `${initialLeft}px`;
+            span.style.top = `${initialTop}px`;
 
-            // Initialize rotation to 0 degrees
-            span.dataset.rotation = 0;
+            // Initialize rotation with a random value between -10 and +10 degrees
+            span.dataset.rotation = (Math.random() * 20 - 10).toFixed(2);
+            span.dataset.speedX = (Math.random() * 2 - 1) * 0.2;
+            span.dataset.speedY = (Math.random() * 2 - 1) * 0.2;
+            span.dataset.rotationSpeed = (Math.random() * 2 - 1) * 0.05;
 
-            // Random speed and rotation values
-            span.dataset.speedX = (Math.random() * 2 - 1) * 0.2; // Adjusted movement speed
-            span.dataset.speedY = (Math.random() * 2 - 1) * 0.2; // Adjusted movement speed
-            span.dataset.rotationSpeed = (Math.random() * 2 - 1) * 0.05; // Adjusted rotation speed
-
-            // Add event listener for clicks
+            // Click event for changing properties
             span.addEventListener('click', () => {
-                // Ensure at least one characteristic changes
-                const properties = ['color', 'fontFamily', 'fontWeight'];
+                const properties = ['color', 'fontFamily', 'fontWeight', 'fontSize'];
                 let changed = false;
 
                 properties.forEach(property => {
-                    if (Math.random() > 0.5 || !changed) { // Ensure at least one change
+                    if (Math.random() > 0.5 || !changed) {
                         changed = true;
                         switch (property) {
                             case 'color':
                                 const colors = [
-                                    'black',
-                                    'rgb(0, 0, 255)',
-                                    'rgb(50, 220, 0)',
-                                    'rgb(230, 70, 220)',
-                                    'rgb(255, 115, 70)'
+                                    'black',               // Classic Black
+                                    'rgb(0, 0, 255)',      // Bright Blue
+                                    'rgb(50, 220, 0)',     // Vibrant Green
+                                    'rgb(230, 70, 220)',   // Bright Magenta
+                                    'rgb(255, 115, 70)',   // Warm Orange
+                                    'rgb(0, 100, 0)',      // Deep Green
+                                    'rgb(0, 255, 255)',    // Bright Teal
+                                    'rgb(255, 87, 34)',    // Rich Orange
+                                    'rgb(128, 0, 128)',    // Vivid Purple
+                                    'rgb(255, 20, 147)',   // Deep Pink
+                                    'rgb(100, 149, 237)',  // Cornflower Blue
+                                    'rgb(255, 69, 0)',     // Red-Orange
+                                    'rgb(50, 205, 50)',    // Lime Green
+                                    'rgb(255, 105, 180)'   // Hot Pink
                                 ];
                                 span.style.color = colors[Math.floor(Math.random() * colors.length)];
                                 break;
                             case 'fontFamily':
-                                span.style.fontFamily = Math.random() < 0.7 ? 'sans-serif' : 'serif';
+                                span.style.fontFamily = span.style.fontFamily === 'Wingdings' ? 'sans-serif' : 'Wingdings';
                                 break;
                             case 'fontWeight':
                                 span.style.fontWeight = span.style.fontWeight === 'bold' ? 'normal' : 'bold';
                                 break;
+                            case 'fontSize':
+                                span.style.fontSize = `${(Math.random() * 0.40 + 0.80) * 18}vw`; // Font size within ±20% range
+                                break;
                         }
                     }
                 });
+
+                if (!changed) {
+                    // Apply random styles if no properties were changed
+                    const { color, fontFamily, fontWeight, fontSize } = getRandomProperties();
+                    span.style.color = color;
+                    span.style.fontFamily = fontFamily;
+                    span.style.fontWeight = fontWeight;
+                    span.style.fontSize = fontSize;
+                }
             });
 
             body.appendChild(span);
             return span;
         });
 
+        // Function to animate the letters with scrolling
         function moveLetters(deltaY) {
             letterElements.forEach(letter => {
                 let speedX = parseFloat(letter.dataset.speedX);
@@ -167,36 +185,42 @@
                 let left = parseFloat(letter.style.left);
                 let top = parseFloat(letter.style.top);
 
-                // Update rotation based on scroll
+                // Update rotation
                 let currentRotation = parseFloat(letter.dataset.rotation);
                 currentRotation += rotationSpeed;
                 letter.dataset.rotation = currentRotation;
                 letter.style.transform = `rotate(${currentRotation}deg)`;
 
-                // Adjust movement based on scroll delta
-                const movementSpeed = 0.5; // Movement speed during scroll
-                left += (speedX * deltaY * movementSpeed);
-                top += (speedY * deltaY * movementSpeed);
+                // Update position
+                left += speedX * deltaY * 0.5;
+                top += speedY * deltaY * 0.5;
 
-                // Bounce off the borders with additional margin
-                if (left < margin || left > width - margin) {
+                // Bounce off edges with margins
+                if (left < horizontalMargin) {
+                    left = horizontalMargin;
+                    speedX = -speedX;
+                    letter.dataset.speedX = speedX;
+                } else if (left + letter.offsetWidth > width - horizontalMargin) {
+                    left = width - horizontalMargin - letter.offsetWidth;
                     speedX = -speedX;
                     letter.dataset.speedX = speedX;
                 }
-                if (top < margin || top > height - margin) {
+
+                if (top < verticalMargin) {
+                    top = verticalMargin;
+                    speedY = -speedY;
+                    letter.dataset.speedY = speedY;
+                } else if (top + letter.offsetHeight > height - verticalMargin) {
+                    top = height - verticalMargin - letter.offsetHeight;
                     speedY = -speedY;
                     letter.dataset.speedY = speedY;
                 }
 
-                // Ensure letters stay within bounds
-                left = Math.max(margin, Math.min(left, width - margin));
-                top = Math.max(margin, Math.min(top, height - margin));
-
-                letter.style.left = left + 'px';
-                letter.style.top = top + 'px';
+                // Apply new position
+                letter.style.left = `${left}px`;
+                letter.style.top = `${top}px`;
             });
 
-            // Request next animation frame
             requestAnimationFrame(() => moveLetters(deltaY));
         }
 
@@ -214,57 +238,58 @@
                 letter.dataset.rotation = currentRotation;
                 letter.style.transform = `rotate(${currentRotation}deg)`;
 
-                // Adjust movement
-                const movementSpeed = 3; // Increased movement speed when not scrolling
-                left += speedX * movementSpeed;
-                top += speedY * movementSpeed;
+                // Update position
+                left += speedX * 3;
+                top += speedY * 3;
 
-                // Bounce off the borders with additional margin
-                if (left < margin || left > width - margin) {
+                // Bounce off edges with margins
+                if (left < horizontalMargin) {
+                    left = horizontalMargin;
+                    speedX = -speedX;
+                    letter.dataset.speedX = speedX;
+                } else if (left + letter.offsetWidth > width - horizontalMargin) {
+                    left = width - horizontalMargin - letter.offsetWidth;
                     speedX = -speedX;
                     letter.dataset.speedX = speedX;
                 }
-                if (top < margin || top > height - margin) {
+
+                if (top < verticalMargin) {
+                    top = verticalMargin;
+                    speedY = -speedY;
+                    letter.dataset.speedY = speedY;
+                } else if (top + letter.offsetHeight > height - verticalMargin) {
+                    top = height - verticalMargin - letter.offsetHeight;
                     speedY = -speedY;
                     letter.dataset.speedY = speedY;
                 }
 
-                // Ensure letters stay within bounds
-                left = Math.max(margin, Math.min(left, width - margin));
-                top = Math.max(margin, Math.min(top, height - margin));
-
-                letter.style.left = left + 'px';
-                letter.style.top = top + 'px';
+                // Apply new position
+                letter.style.left = `${left}px`;
+                letter.style.top = `${top}px`;
             });
 
-            // Request next animation frame
             requestAnimationFrame(continuousMovement);
         }
 
         let scrolling = false;
         let scrollDelta = 0;
-        let transitionSpeed = 0.05; // Easing speed factor
+        let transitionSpeed = 0.05;
 
         function onScroll(event) {
             scrolling = true;
             scrollDelta = event.deltaY;
-
-            // Move letters based on scroll
             moveLetters(scrollDelta);
 
             clearTimeout(window.scrollTimeout);
             window.scrollTimeout = setTimeout(() => {
                 scrolling = false;
-            }, 500); // Delay for smoothing transition
+            }, 500);
         }
 
         // Add both wheel and touch event listeners
         window.addEventListener('wheel', onScroll);
         window.addEventListener('touchmove', (event) => {
-            // Prevent default touch actions
             event.preventDefault();
-
-            // Calculate deltaY for touch events
             const deltaY = event.touches[0].clientY - (lastTouchY || event.touches[0].clientY);
             lastTouchY = event.touches[0].clientY;
             onScroll({ deltaY });
@@ -274,7 +299,6 @@
 
         function animate() {
             if (scrolling) {
-                // Easing between scrolling and non-scrolling
                 letterElements.forEach(letter => {
                     let currentSpeedX = parseFloat(letter.dataset.speedX);
                     let currentSpeedY = parseFloat(letter.dataset.speedY);
@@ -283,7 +307,6 @@
                 });
                 requestAnimationFrame(animate);
             } else {
-                // Continue movement when not scrolling but faster
                 requestAnimationFrame(continuousMovement);
             }
         }
