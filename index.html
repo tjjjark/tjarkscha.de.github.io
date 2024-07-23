@@ -11,9 +11,10 @@
             height: 100vh; /* Set height to viewport height */
             background-color: #e9e9e9; /* Updated background color */
             position: relative;
+            touch-action: none; /* Prevent default touch actions like scrolling */
         }
         .letter {
-            font-size: 150px; /* Increased font size */
+            font-size: 8vw; /* Responsive font size based on viewport width */
             position: absolute;
             color: #333;
             transition: transform 0.1s, color 0.3s, font-family 0.3s, font-weight 0.3s;
@@ -30,23 +31,54 @@
         const height = window.innerHeight;
         const margin = 50; // Margin from edges
 
-        // Initial positions for "tjark j. schade" with some randomness
-        const initialPositions = {
-            't': { left: 150, top: 150 },
-            'j': { left: 250, top: 150 },
-            'a': { left: 350, top: 150 },
-            'r': { left: 450, top: 150 },
-            'k': { left: 550, top: 150 },
-            ' ': { left: 650, top: 150 }, // Space between words
-            'j': { left: 750, top: 150 },
-            '.': { left: 850, top: 150 },
-            's': { left: 950, top: 150 },
-            'c': { left: 1050, top: 150 },
-            'h': { left: 1150, top: 150 },
-            'a': { left: 1250, top: 150 },
-            'd': { left: 1350, top: 150 },
-            'e': { left: 1450, top: 150 }
-        };
+        // B-Spline curve generation
+        function bSpline(t, points) {
+            const n = points.length - 1;
+            const p = 3; // Degree of the B-Spline
+            const k = Math.floor(t * (n - p + 1));
+            const localT = t * (n - p + 1) - k;
+            const t0 = k / (n - p + 1);
+            const t1 = t0 + 1;
+
+            const basis = (t, k, p) => {
+                if (p === 0) return (k <= t && t < k + 1) ? 1 : 0;
+                const a = (t - k) / p;
+                const b = (k + p + 1 - t) / p;
+                return a * basis(t, k, p - 1) + b * basis(t, k + 1, p - 1);
+            };
+
+            return [
+                basis(localT, k, p) * points[k][0] + basis(localT, k + 1, p) * points[k + 1][0],
+                basis(localT, k, p) * points[k][1] + basis(localT, k + 1, p) * points[k + 1][1]
+            ];
+        }
+
+        function generateBSplinePoints(controlPoints, numPoints) {
+            const points = [];
+            for (let i = 0; i <= 1; i += 1 / (numPoints - 1)) {
+                points.push(bSpline(i, controlPoints));
+            }
+            return points;
+        }
+
+        // Define control points for B-Spline expanded across the screen
+        const controlPoints = [
+            [margin, margin],
+            [width / 6, height / 4],
+            [width / 3, height / 2],
+            [2 * width / 3, 2 * height / 3],
+            [5 * width / 6, height / 4],
+            [width - margin, height - margin]
+        ];
+
+        const numPoints = 15; // Total number of points along the spline
+        const splinePoints = generateBSplinePoints(controlPoints, numPoints);
+
+        // Initial positions for letters along the spline
+        const initialPositions = {};
+        letters.forEach((letter, index) => {
+            initialPositions[letter] = splinePoints[index % numPoints] || [Math.random() * (width - 2 * margin) + margin, Math.random() * (height - 2 * margin) + margin];
+        });
 
         // Random properties for letters
         function getRandomProperties() {
@@ -61,7 +93,7 @@
             const fontWeights = ['normal', 'bold'];
 
             return {
-                color: Math.random() < 0.6 ? 'black' : colors[Math.floor(Math.random() * colors.length)],
+                color: Math.random() < 0.7 ? 'black' : colors[Math.floor(Math.random() * colors.length)],
                 fontFamily: Math.random() < 0.7 ? 'sans-serif' : 'serif',
                 fontWeight: fontWeights[Math.floor(Math.random() * fontWeights.length)]
             };
@@ -79,10 +111,8 @@
             span.style.fontFamily = fontFamily;
             span.style.fontWeight = fontWeight;
 
-            // Position letters initially close to spelling out the text with randomness
-            const basePosition = initialPositions[letter] || { left: Math.random() * (width - 2 * margin) + margin, top: Math.random() * (height - 2 * margin) + margin };
-            const initialLeft = basePosition.left + (Math.random() - 0.5) * 50; // Reduced randomness
-            const initialTop = basePosition.top + (Math.random() - 0.5) * 50;  // Reduced randomness
+            // Position letters initially along the spline
+            const [initialLeft, initialTop] = initialPositions[letter] || [Math.random() * (width - 2 * margin) + margin, Math.random() * (height - 2 * margin) + margin];
             span.style.left = `${Math.max(margin, Math.min(initialLeft, width - margin))}px`;
             span.style.top = `${Math.max(margin, Math.min(initialTop, height - margin))}px`;
 
@@ -123,49 +153,13 @@
                         }
                     }
                 });
-
-                // Add bounce effect on click
-                const bounceDuration = 50000; // Duration in milliseconds
-                const bounceSpeed = 3.5; // Speed factor
-
-                // Store the original position
-                const startLeft = parseFloat(span.style.left);
-                const startTop = parseFloat(span.style.top);
-                let bounceStartTime = Date.now();
-                let isBouncing = true;
-
-                function bounce() {
-                    const elapsed = Date.now() - bounceStartTime;
-                    if (elapsed < bounceDuration) {
-                        const progress = elapsed / bounceDuration;
-                        const easing = Math.sin(progress * Math.PI / 2); // Smooth in-out effect
-                        span.style.left = `${startLeft + (Math.random() * 0.2 - 1) * bounceSpeed * easing}px`;
-                        span.style.top = `${startTop + (Math.random() * 0.2 - 1) * bounceSpeed * easing}px`;
-                        requestAnimationFrame(bounce);
-                    } else {
-                        isBouncing = false;
-                    }
-                }
-
-                bounce();
-
-                // Keep bouncing as long as the letter is clicked
-                span.addEventListener('mousedown', () => {
-                    isBouncing = true;
-                    bounceStartTime = Date.now();
-                    bounce();
-                });
-
-                document.addEventListener('mouseup', () => {
-                    isBouncing = false;
-                });
             });
 
             body.appendChild(span);
             return span;
         });
 
-        function moveLetters(deltaY, speedFactor) {
+        function moveLetters(deltaY) {
             letterElements.forEach(letter => {
                 let speedX = parseFloat(letter.dataset.speedX);
                 let speedY = parseFloat(letter.dataset.speedY);
@@ -179,8 +173,8 @@
                 letter.dataset.rotation = currentRotation;
                 letter.style.transform = `rotate(${currentRotation}deg)`;
 
-                // Adjust movement based on scroll delta and speed factor
-                const movementSpeed = 1 + speedFactor * 10; // Reset speed factor
+                // Adjust movement based on scroll delta
+                const movementSpeed = 0.5; // Movement speed during scroll
                 left += (speedX * deltaY * movementSpeed);
                 top += (speedY * deltaY * movementSpeed);
 
@@ -202,8 +196,8 @@
                 letter.style.top = top + 'px';
             });
 
-            // Check for collisions between letters
-            checkCollisions();
+            // Request next animation frame
+            requestAnimationFrame(() => moveLetters(deltaY));
         }
 
         function continuousMovement() {
@@ -221,7 +215,7 @@
                 letter.style.transform = `rotate(${currentRotation}deg)`;
 
                 // Adjust movement
-                const movementSpeed = 0.5; // Reduced movement speed when not scrolling
+                const movementSpeed = 3; // Increased movement speed when not scrolling
                 left += speedX * movementSpeed;
                 top += speedY * movementSpeed;
 
@@ -243,36 +237,8 @@
                 letter.style.top = top + 'px';
             });
 
-            // Check for collisions between letters
-            checkCollisions();
+            // Request next animation frame
             requestAnimationFrame(continuousMovement);
-        }
-
-        function checkCollisions() {
-            for (let i = 0; i < letterElements.length; i++) {
-                for (let j = i + 1; j < letterElements.length; j++) {
-                    const letterA = letterElements[i];
-                    const letterB = letterElements[j];
-                    const rectA = letterA.getBoundingClientRect();
-                    const rectB = letterB.getBoundingClientRect();
-
-                    if (rectA.left < rectB.right &&
-                        rectA.right > rectB.left &&
-                        rectA.top < rectB.bottom &&
-                        rectA.bottom > rectB.top) {
-                        // Collision detected, bounce letters off each other
-                        const speedAX = parseFloat(letterA.dataset.speedX);
-                        const speedAY = parseFloat(letterA.dataset.speedY);
-                        const speedBX = parseFloat(letterB.dataset.speedX);
-                        const speedBY = parseFloat(letterB.dataset.speedY);
-
-                        letterA.dataset.speedX = -speedAX;
-                        letterA.dataset.speedY = -speedAY;
-                        letterB.dataset.speedX = -speedBX;
-                        letterB.dataset.speedY = -speedBY;
-                    }
-                }
-            }
         }
 
         let scrolling = false;
@@ -284,7 +250,7 @@
             scrollDelta = event.deltaY;
 
             // Move letters based on scroll
-            moveLetters(scrollDelta, 1); // Reset speed factor
+            moveLetters(scrollDelta);
 
             clearTimeout(window.scrollTimeout);
             window.scrollTimeout = setTimeout(() => {
@@ -292,7 +258,19 @@
             }, 500); // Delay for smoothing transition
         }
 
+        // Add both wheel and touch event listeners
         window.addEventListener('wheel', onScroll);
+        window.addEventListener('touchmove', (event) => {
+            // Prevent default touch actions
+            event.preventDefault();
+
+            // Calculate deltaY for touch events
+            const deltaY = event.touches[0].clientY - (lastTouchY || event.touches[0].clientY);
+            lastTouchY = event.touches[0].clientY;
+            onScroll({ deltaY });
+        });
+
+        let lastTouchY = 0;
 
         function animate() {
             if (scrolling) {
@@ -305,7 +283,7 @@
                 });
                 requestAnimationFrame(animate);
             } else {
-                // Continue movement when not scrolling but slower
+                // Continue movement when not scrolling but faster
                 requestAnimationFrame(continuousMovement);
             }
         }
