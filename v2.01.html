@@ -30,7 +30,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Version Tracking: v2.01.0020
+        // Version Tracking: v2.01.0019
         // This is the current version of the code. Future changes will increment the version number accordingly.
 
         // Scene setup
@@ -63,7 +63,6 @@
         const letters = 'PORTFOLIOBYTJARK'; // Uppercase letters
         let currentLetterIndex = 0;
         const letterMeshes = [];
-        let cursorPosition = new THREE.Vector3(0, 0, 0);
         let imagesSpawned = false; // Flag to track if images should be spawned
         let imageCounter = 0; // Counter to keep track of which image to spawn next
 
@@ -144,8 +143,9 @@
                 const mesh = new THREE.Mesh(geometry, material);
                 scene.add(mesh);
                 mesh.position.copy(position);
+                console.log(`Image created at: ${position.x}, ${position.y}`); // Debugging info
             }, undefined, function (err) {
-                console.error('Error loading image:', err);
+                console.error('Error loading image:', err); // Debugging info
             });
         }
 
@@ -169,13 +169,11 @@
                 // Create the next letter in the sequence at the click position
                 createLetter(letters[currentLetterIndex], clickPosition);
                 currentLetterIndex = (currentLetterIndex + 1) % letters.length; // Move to the next letter
-            } else {
-                if (imageCounter < imageUrls.length) {
-                    // Create an image at the click position
-                    const imageUrl = imageUrls[imageCounter];
-                    createImage(imageUrl, clickPosition);
-                    imageCounter++;
-                }
+            } else if (imageCounter < imageUrls.length) {
+                // Create an image at the click position
+                const imageUrl = imageUrls[imageCounter];
+                createImage(imageUrl, clickPosition);
+                imageCounter++;
             }
         }
 
@@ -193,17 +191,25 @@
                 letter.mesh.position.add(letter.velocity);
 
                 // Ensure letters do not move out of bounds
-                const bounds = window.innerWidth / 2 - 50; // Adjust bounds based on window size
-                if (letter.mesh.position.x > bounds || letter.mesh.position.x < -bounds) {
-                    letter.velocity.x *= -1; // Reverse x direction
-                }
-                if (letter.mesh.position.y > bounds || letter.mesh.position.y < -bounds) {
-                    letter.velocity.y *= -1; // Reverse y direction
+                const bounds = {
+                    minX: -window.innerWidth / 2,
+                    maxX: window.innerWidth / 2,
+                    minY: -window.innerHeight / 2,
+                    maxY: window.innerHeight / 2
+                };
+
+                if (letter.mesh.position.x < bounds.minX || letter.mesh.position.x > bounds.maxX) {
+                    letter.velocity.x *= -1;
                 }
 
-                // Ensure letters stay within view
-                letter.mesh.position.x = Math.max(-bounds, Math.min(bounds, letter.mesh.position.x));
-                letter.mesh.position.y = Math.max(-bounds, Math.min(bounds, letter.mesh.position.y));
+                if (letter.mesh.position.y < bounds.minY || letter.mesh.position.y > bounds.maxY) {
+                    letter.velocity.y *= -1;
+                }
+
+                // Apply stronger attraction to initial position
+                const attractionStrength = 0.001;
+                const direction = letter.initialPosition.clone().sub(letter.mesh.position);
+                letter.velocity.add(direction.multiplyScalar(attractionStrength));
             });
 
             renderer.render(scene, camera);
@@ -215,7 +221,6 @@
         window.addEventListener('mousemove', (event) => {
             const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
             const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-            cursorPosition.set(mouseX * 100, mouseY * 100, 0); // Ensure z is always 0
 
             // Update custom cursor position
             document.getElementById('custom-cursor').style.left = `${event.clientX}px`;
