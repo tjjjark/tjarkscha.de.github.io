@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Spinning Letters with WebGL</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #e9e9e9; /* Light gray background color */
+            cursor: none; /* Hide the default cursor */
+        }
+
+        /* Custom cursor style */
+        #custom-cursor {
+            position: absolute;
+            width: 22px; /* Custom cursor size */
+            height: 22px; /* Custom cursor size */
+            background-color: black;
+            border-radius: 50%;
+            pointer-events: none; /* Ensure the cursor doesn't interfere with mouse events */
+            transform: translate(-50%, -50%); /* Center the cursor on the mouse pointer */
+            z-index: 1000; /* Make sure the cursor is above other elements */
+        }
+    </style>
+</head>
+<body>
+    <div id="custom-cursor"></div> <!-- Custom cursor element -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Version Tracking: v2.01.0015
+        // This is the current version of the code. Future changes will increment the version number accordingly.
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Background color
+        renderer.setClearColor(0xe9e9e9, 1); // Light gray background color
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // Bright white ambient light
+        scene.add(ambientLight);
+
+        // Parameters for spinning
+        const baseSpeed = 0.001; // Base speed of rotation
+        const maxSpeedIncrease = 0.0002; // Maximum speed increment
+
+        // Define a set of 5 modern bold colors
+        const colors = [
+            0x000000, // Black
+            0xFF4C4C, // Red
+            0xFF9F00, // Orange
+            0x0000FF, // Bright Blue
+            0x39FF14  // Neon Green
+        ];
+
+        const letters = 'PORTFOLIOBYTJARK'; // Uppercase letters
+        let currentLetterIndex = 0;
+        const letterMeshes = [];
+        let cursorPosition = new THREE.Vector3(0, 0, 0);
+        let initialLetterCreated = false; // Flag to track if the initial letter has been created
+        let imagesSpawned = false; // Flag to track if images should be spawned
+        let imageCounter = 0; // Counter to keep track of which image to spawn next
+
+        // Define the array of image URLs from GitHub Pages
+        const imageUrls = [
+            'https://tjjjark.github.io/mainImages/image1.png',
+            'https://tjjjark.github.io/mainImages/image2.png',
+            'https://tjjjark.github.io/mainImages/image3.png',
+            'https://tjjjark.github.io/mainImages/image4.png',
+            'https://tjjjark.github.io/mainImages/image5.png'
+        ];
+
+        // Easing function (ease out)
+        function easeOutQuad(t) {
+            return t * (2 - t);
+        }
+
+        // Function to create a new letter
+        function createLetter(letter, position) {
+            const loader = new THREE.FontLoader();
+            loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
+                // Randomize font size within ±15% of the base size
+                const baseSize = 15;
+                const size = baseSize * (1 + (Math.random() - 0.5) * 0.3); // Random size between 85% and 115%
+
+                const textGeometry = new THREE.TextGeometry(letter, {
+                    font: font,
+                    size: size,
+                    height: 2,
+                    curveSegments: 12,
+                    bevelEnabled: false
+                });
+
+                // Randomize color with decreased probability of black
+                let color;
+                if (Math.random() < 0.50) { // 50% chance of black
+                    color = 0x000000; // Black
+                } else {
+                    color = colors[Math.floor(Math.random() * colors.length)];
+                }
+
+                const textMaterial = new THREE.MeshBasicMaterial({ color: color });
+                const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                scene.add(textMesh);
+
+                // Add to letterMeshes array
+                letterMeshes.push({
+                    mesh: textMesh,
+                    rotationSpeed: baseSpeed + Math.random() * maxSpeedIncrease,
+                    rotationDirection: Math.random() > 0.5 ? 1 : -1, // Random direction
+                    speedChangeStartTime: 0,
+                    currentSpeed: baseSpeed,
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.00001, // Further reduced x velocity for smoother movement
+                        (Math.random() - 0.5) * 0.00001, // Further reduced y velocity for smoother movement
+                        0 // No movement in the z direction
+                    ),
+                    damping: 0.98, // Increased damping effect for smoother motion
+                    initialPosition: position // Store initial position for stronger attraction
+                });
+
+                // Set the position of the letter
+                textMesh.position.copy(position);
+            });
+        }
+
+        // Function to create an image
+        function createImage(url, position) {
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(url, function (texture) {
+                // Adjust size to 50% of the visible window height
+                const imageHeight = window.innerHeight * 0.5;
+                const imageAspectRatio = texture.image.width / texture.image.height;
+                const imageWidth = imageHeight * imageAspectRatio;
+
+                const geometry = new THREE.PlaneGeometry(imageWidth, imageHeight);
+                const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+                mesh.position.copy(position);
+            }, undefined, function (err) {
+                console.error('Error loading image:', err);
+            });
+        }
+
+        // Click event listener
+        function handleClick(event) {
+            const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            const mouseVector = new THREE.Vector3(mouseX, mouseY, 1).unproject(camera);
+
+            // Calculate direction vector from camera to click point
+            const direction = mouseVector.sub(camera.position).normalize();
+
+            // Calculate distance from camera to a reasonable Z position in the scene
+            const distance = -camera.position.z / direction.z;
+
+            // Calculate the exact 3D position
+            const clickPosition = camera.position.clone().add(direction.multiplyScalar(distance));
+            clickPosition.z = 0; // Ensure the z position is set to 0
+
+            if (!initialLetterCreated) {
+                // Create the first letter in the sequence at the click position
+                createLetter(letters[currentLetterIndex], clickPosition);
+                initialLetterCreated = true;
+                currentLetterIndex = (currentLetterIndex + 1) % letters.length; // Move to the next letter after initial click
+            } else {
+                if (currentLetterIndex < letters.length) {
+                    // Create the next letter in the sequence at the click position
+                    createLetter(letters[currentLetterIndex], clickPosition);
+                    currentLetterIndex = (currentLetterIndex + 1) % letters.length; // Move to the next letter
+                } else if (!imagesSpawned) {
+                    // Images should be spawned
+                    imagesSpawned = true;
+                    const imageUrl = imageUrls[imageCounter % imageUrls.length];
+                    createImage(imageUrl, clickPosition);
+                    imageCounter++;
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            letterMeshes.forEach(letter => {
+                // Update rotation
+                letter.mesh.rotation.x += letter.currentSpeed * letter.rotationDirection;
+                letter.mesh.rotation.y += letter.currentSpeed * letter.rotationDirection;
+
+                // Apply velocity and damping
+                letter.velocity.multiplyScalar(letter.damping);
+                letter.mesh.position.add(letter.velocity);
+
+                // Ensure letters do not move out of bounds
+                const bounds = window.innerWidth / 2 - 50; // Adjust bounds based on window size
+                if (letter.mesh.position.x > bounds || letter.mesh.position.x < -bounds) {
+                    letter.velocity.x *= -1; // Reverse x direction
+                }
+                if (letter.mesh.position.y > bounds || letter.mesh.position.y < -bounds) {
+                    letter.velocity.y *= -1; // Reverse y direction
+                }
+
+                // Ensure letters stay within view
+                letter.mesh.position.x = Math.max(-bounds, Math.min(bounds, letter.mesh.position.x));
+                letter.mesh.position.y = Math.max(-bounds, Math.min(bounds, letter.mesh.position.y));
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Event listeners
+        window.addEventListener('click', handleClick);
+
+        window.addEventListener('mousemove', (event) => {
+            const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            cursorPosition.set(mouseX * 100, mouseY * 100, 0); // Ensure z is always 0
+
+            // Update custom cursor position
+            document.getElementById('custom-cursor').style.left = `${event.clientX}px`;
+            document.getElementById('custom-cursor').style.top = `${event.clientY}px`;
+        });
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
+        camera.position.z = 125; // Adjusted zoom level
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
