@@ -26,7 +26,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
     <script>
         // Version Tracking
-        // Version v2.01.002
+        // Version v2.01.004
 
         // Constants
         const letters = 'PORTFOLIOBYTJARK';
@@ -78,9 +78,9 @@
             letterMeshes.push({
                 mesh,
                 velocity: new THREE.Vector3(
-                    (Math.random() - 0.5) * 0.02, 
-                    (Math.random() - 0.5) * 0.02, 
-                    (Math.random() - 0.5) * 0.02
+                    (Math.random() - 0.5) * 0.01, 
+                    (Math.random() - 0.5) * 0.01, 
+                    (Math.random() - 0.5) * 0.01
                 )
             });
         }
@@ -101,7 +101,11 @@
                     const material = new THREE.MeshBasicMaterial({ map: texture });
                     const geometry = new THREE.PlaneGeometry(50, 50 * texture.image.height / texture.image.width);
                     const mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0);
+                    mesh.position.set(
+                        (event.clientX / window.innerWidth) * 2 - 1, 
+                        -(event.clientY / window.innerHeight) * 2 + 1, 
+                        0
+                    );
                     scene.add(mesh);
                 });
                 currentIndex++;
