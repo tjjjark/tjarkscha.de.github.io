@@ -30,7 +30,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Version Tracking: v2.01.0015
+        // Version Tracking: v2.01.0020
         // This is the current version of the code. Future changes will increment the version number accordingly.
 
         // Scene setup
@@ -64,7 +64,6 @@
         let currentLetterIndex = 0;
         const letterMeshes = [];
         let cursorPosition = new THREE.Vector3(0, 0, 0);
-        let initialLetterCreated = false; // Flag to track if the initial letter has been created
         let imagesSpawned = false; // Flag to track if images should be spawned
         let imageCounter = 0; // Counter to keep track of which image to spawn next
 
@@ -166,20 +165,14 @@
             const clickPosition = camera.position.clone().add(direction.multiplyScalar(distance));
             clickPosition.z = 0; // Ensure the z position is set to 0
 
-            if (!initialLetterCreated) {
-                // Create the first letter in the sequence at the click position
+            if (currentLetterIndex < letters.length) {
+                // Create the next letter in the sequence at the click position
                 createLetter(letters[currentLetterIndex], clickPosition);
-                initialLetterCreated = true;
-                currentLetterIndex = (currentLetterIndex + 1) % letters.length; // Move to the next letter after initial click
+                currentLetterIndex = (currentLetterIndex + 1) % letters.length; // Move to the next letter
             } else {
-                if (currentLetterIndex < letters.length) {
-                    // Create the next letter in the sequence at the click position
-                    createLetter(letters[currentLetterIndex], clickPosition);
-                    currentLetterIndex = (currentLetterIndex + 1) % letters.length; // Move to the next letter
-                } else if (!imagesSpawned) {
-                    // Images should be spawned
-                    imagesSpawned = true;
-                    const imageUrl = imageUrls[imageCounter % imageUrls.length];
+                if (imageCounter < imageUrls.length) {
+                    // Create an image at the click position
+                    const imageUrl = imageUrls[imageCounter];
                     createImage(imageUrl, clickPosition);
                     imageCounter++;
                 }
