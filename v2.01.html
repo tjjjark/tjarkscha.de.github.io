@@ -49,18 +49,22 @@
         light.position.set(1, 1, 1).normalize();
         scene.add(light);
 
-        // Letter setup
-        const letterGeometry = new THREE.TextGeometry('P', {
-            font: new THREE.FontLoader().parse({/* JSON font data here */}),
-            size: 15,
-            height: 2
+        // Font loader
+        const loader = new THREE.FontLoader();
+        let font;
+
+        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (loadedFont) {
+            font = loadedFont;
         });
-        const letterMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-        let letterMeshes = [];
+
+        // Letter setup
+        const letterMeshes = [];
 
         function createLetter(char, position) {
+            if (!font) return; // Wait until font is loaded
+
             const geometry = new THREE.TextGeometry(char, {
-                font: new THREE.FontLoader().parse({/* JSON font data here */}),
+                font: font,
                 size: 15,
                 height: 2
             });
@@ -68,12 +72,16 @@
             const mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(position.x, position.y, position.z);
             scene.add(mesh);
-            letterMeshes.push({ mesh, velocity: new THREE.Vector3(Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05) });
+            letterMeshes.push({ mesh, velocity: new THREE.Vector3(Math.random() * 0.05 - 0.025, Math.random() * 0.05 - 0.025, Math.random() * 0.05 - 0.025) });
         }
 
         function handleClick(event) {
+            if (!font) return; // Wait until font is loaded
+
             if (!spawnImages && currentIndex < letters.length) {
-                createLetter(letters[currentIndex], { x: (event.clientX / window.innerWidth) * 2 - 1, y: -(event.clientY / window.innerHeight) * 2 + 1, z: 0 });
+                const x = (event.clientX / window.innerWidth) * 2 - 1;
+                const y = -(event.clientY / window.innerHeight) * 2 + 1;
+                createLetter(letters[currentIndex], { x, y, z: 0 });
                 currentIndex++;
             } else if (spawnImages) {
                 const imageUrl = imageUrls[(currentIndex - letters.length) % imageUrls.length];
@@ -115,8 +123,6 @@
         // Event listeners
         window.addEventListener('click', handleClick);
         window.addEventListener('mousemove', (event) => {
-            const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-            const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
             document.getElementById('custom-cursor').style.left = `${event.clientX}px`;
             document.getElementById('custom-cursor').style.top = `${event.clientY}px`;
         });
